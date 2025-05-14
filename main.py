@@ -86,6 +86,31 @@ def handle_heartbeat(apobj, heartbeat, heartbeat_path, now):
         heartbeat["start_time"] = now
         save_heartbeat(heartbeat_path, heartbeat)
 
+def verbose_mode_loop(apobj):
+    """
+    Runs the verbose mode loop: prints the public IP every 90 seconds for 5 minutes,
+    then sends a test notification.
+    Args:
+        apobj (Apprise): Apprise object for notifications.
+    """
+    start_time = time.time()
+    elapsed = 0
+    while elapsed < 300:  # 5 minutes = 300 seconds
+        public_ip = get_public_ip()
+        if public_ip is not None:
+            print(f"[VERBOSE] Current Public IP: {public_ip}")
+        else:
+            print("[VERBOSE] Could not retrieve public IP.")
+        time.sleep(90)
+        elapsed = time.time() - start_time
+    # After 5 minutes, send test message
+    test_message = "Apprise Test: 5 minutes elapsed in verbose mode."
+    apobj.notify(
+        title="Spectrum_PubIP Test",
+        body=test_message
+    )
+    print("[VERBOSE] Test notification sent to Apprise URLs.")
+
 def main(verbose_mode=False):
     """
     Main function to check and notify about public IP changes or send a heartbeat.
@@ -113,23 +138,7 @@ def main(verbose_mode=False):
     handle_heartbeat(apobj, heartbeat, heartbeat_path, now)
 
     if verbose_mode:
-        start_time = time.time()
-        elapsed = 0
-        while elapsed < 300:  # 5 minutes = 300 seconds
-            public_ip = get_public_ip()
-            if public_ip is not None:
-                print(f"[VERBOSE] Current Public IP: {public_ip}")
-            else:
-                print("[VERBOSE] Could not retrieve public IP.")
-            time.sleep(90)
-            elapsed = time.time() - start_time
-        # After 5 minutes, send test message
-        test_message = "Apprise Test: 5 minutes elapsed in verbose mode."
-        apobj.notify(
-            title="Spectrum_PubIP Test",
-            body=test_message
-        )
-        print("[VERBOSE] Test notification sent to Apprise URLs.")
+        verbose_mode_loop(apobj)
     else:
         date = datetime.datetime.now().strftime("%m/%d/%Y")
         public_ip = get_public_ip()
