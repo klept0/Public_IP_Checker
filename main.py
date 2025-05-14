@@ -2,12 +2,12 @@
 A script to check and notify about public IP address changes using Apprise.
 """
 
-import requests
 import datetime
 import json
 import os
 import sys
 import time
+import requests
 from apprise import Apprise
 
 def get_public_ip():
@@ -40,7 +40,7 @@ def load_heartbeat(path):
         dict: Heartbeat data.
     """
     if os.path.exists(path):
-        with open(path, "r") as f:
+        with open(path, "r", encoding="utf-8") as f:
             return json.load(f)
     now = time.time()
     return {
@@ -56,17 +56,17 @@ def save_heartbeat(path, data):
         path (str): Path to the heartbeat file.
         data (dict): Heartbeat data to save.
     """
-    with open(path, "w") as f:
+    with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f)
 
-def main(verbose=False):
+def main(verbose_mode=False):
     """
     Main function to check and notify about public IP changes or send a heartbeat.
     Args:
-        verbose (bool): If True, runs in verbose mode. Otherwise, runs in normal mode.
+        verbose_mode (bool): If True, runs in verbose mode. Otherwise, runs in normal mode.
     """
     # Load config from JSON file
-    with open("apprise_config.json", "r") as f:
+    with open("apprise_config.json", "r", encoding="utf-8") as f:
         config = json.load(f)
 
     # Initialize Apprise with all URLs from config
@@ -101,7 +101,7 @@ def main(verbose=False):
         heartbeat["start_time"] = now
         save_heartbeat(heartbeat_path, heartbeat)
 
-    if verbose:
+    if verbose_mode:
         start_time = time.time()
         elapsed = 0
         while elapsed < 300:  # 5 minutes = 300 seconds
@@ -127,7 +127,7 @@ def main(verbose=False):
             return
         # Read previous IP from file
         if os.path.exists(prev_ip_path):
-            with open(prev_ip_path, "r") as file:
+            with open(prev_ip_path, "r", encoding="utf-8") as file:
                 previous_ip = file.read().strip()
         else:
             previous_ip = ""
@@ -138,7 +138,7 @@ def main(verbose=False):
                 title="Spectrum_PubIP",
                 body=message
             )
-            with open(prev_ip_path, "w") as file:
+            with open(prev_ip_path, "w", encoding="utf-8") as file:
                 file.write(public_ip)
             # Update heartbeat info
             heartbeat["last_ip_change"] = now
@@ -146,5 +146,5 @@ def main(verbose=False):
             save_heartbeat(heartbeat_path, heartbeat)
 
 if __name__ == "__main__":
-    verbose = "--verbose" in sys.argv
-    main(verbose)
+    verbose_flag = "--verbose" in sys.argv
+    main(verbose_flag)
