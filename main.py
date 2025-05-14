@@ -1,3 +1,7 @@
+"""
+A script to check and notify about public IP address changes using Apprise.
+"""
+
 import requests
 import datetime
 import json
@@ -7,22 +11,34 @@ import time
 from apprise import Apprise
 
 def get_public_ip():
+    """
+    Retrieves the public IP address using primary and backup sources.
+    Returns:
+        str: The public IP address or None if retrieval fails.
+    """
     try:
         # Primary source: ipify
         response = requests.get("https://api.ipify.org", timeout=5)
         response.raise_for_status()
         return response.text.strip()
-    except Exception:
+    except requests.exceptions.RequestException:
         try:
             # Backup source: ifconfig.me
             response = requests.get("https://ifconfig.me/ip", timeout=5)
             response.raise_for_status()
             return response.text.strip()
-        except Exception as e:
+        except requests.exceptions.RequestException as e:
             print(f"[ERROR] Unable to retrieve public IP: {e}")
             return None
 
 def load_heartbeat(path):
+    """
+    Loads the heartbeat data from a JSON file. Creates a new file if it doesn't exist.
+    Args:
+        path (str): Path to the heartbeat file.
+    Returns:
+        dict: Heartbeat data.
+    """
     if os.path.exists(path):
         with open(path, "r") as f:
             return json.load(f)
@@ -34,10 +50,21 @@ def load_heartbeat(path):
     }
 
 def save_heartbeat(path, data):
+    """
+    Saves the heartbeat data to a JSON file.
+    Args:
+        path (str): Path to the heartbeat file.
+        data (dict): Heartbeat data to save.
+    """
     with open(path, "w") as f:
         json.dump(data, f)
 
 def main(verbose=False):
+    """
+    Main function to check and notify about public IP changes or send a heartbeat.
+    Args:
+        verbose (bool): If True, runs in verbose mode. Otherwise, runs in normal mode.
+    """
     # Load config from JSON file
     with open("apprise_config.json", "r") as f:
         config = json.load(f)
