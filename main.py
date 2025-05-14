@@ -59,6 +59,33 @@ def save_heartbeat(path, data):
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f)
 
+def handle_heartbeat(apobj, heartbeat, heartbeat_path, now):
+    """
+    Checks and sends a heartbeat notification if needed, and updates heartbeat data.
+    Args:
+        apobj (Apprise): Apprise object for notifications.
+        heartbeat (dict): Heartbeat data.
+        heartbeat_path (str): Path to heartbeat JSON file.
+        now (float): Current timestamp.
+    """
+    days_since_start = (now - heartbeat["start_time"]) / 86400
+    days_since_last_change = (now - heartbeat["last_ip_change"]) / 86400
+
+    if days_since_start >= 30:
+        heartbeat_message = (
+            f"Heartbeat: Script has been running for {int(days_since_start)} days.\n"
+            f"No IP change in {int(days_since_last_change)} days.\n"
+            f"Total IP changes: {heartbeat['ip_change_count']}"
+        )
+        apobj.notify(
+            title="Spectrum_PubIP Heartbeat",
+            body=heartbeat_message
+        )
+        print("[HEARTBEAT] Heartbeat notification sent to Apprise URLs.")
+        # Reset start_time after sending heartbeat
+        heartbeat["start_time"] = now
+        save_heartbeat(heartbeat_path, heartbeat)
+
 def main(verbose_mode=False):
     """
     Main function to check and notify about public IP changes or send a heartbeat.
@@ -82,24 +109,8 @@ def main(verbose_mode=False):
     heartbeat = load_heartbeat(heartbeat_path)
     now = time.time()
 
-    # Heartbeat check: 30 days = 2592000 seconds
-    days_since_start = (now - heartbeat["start_time"]) / 86400
-    days_since_last_change = (now - heartbeat["last_ip_change"]) / 86400
-
-    if days_since_start >= 30:
-        heartbeat_message = (
-            f"Heartbeat: Script has been running for {int(days_since_start)} days.\n"
-            f"No IP change in {int(days_since_last_change)} days.\n"
-            f"Total IP changes: {heartbeat['ip_change_count']}"
-        )
-        apobj.notify(
-            title="Spectrum_PubIP Heartbeat",
-            body=heartbeat_message
-        )
-        print("[HEARTBEAT] Heartbeat notification sent to Apprise URLs.")
-        # Reset start_time after sending heartbeat
-        heartbeat["start_time"] = now
-        save_heartbeat(heartbeat_path, heartbeat)
+    # Handle heartbeat notification logic
+    handle_heartbeat(apobj, heartbeat, heartbeat_path, now)
 
     if verbose_mode:
         start_time = time.time()
