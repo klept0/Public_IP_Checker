@@ -1,0 +1,6 @@
+{
+  "apprise_urls": [
+    "pover://YOUR_PUSHOVER_USER@YOUR_PUSHOVER_TOKEN/",
+    "tgram://YOUR_BOT_TOKEN/YOUR_CHAT_ID"
+  ]
+}
